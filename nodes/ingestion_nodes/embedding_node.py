@@ -14,8 +14,7 @@ def embedding_node(state: IngestionState) -> IngestionState:
             "page_numbers": chunk.get("page_numbers"),
             "chunk_id": chunk.get("chunk_id"),
             "coordinates": chunk.get("coordinates"),
-            "chunk_type": chunk.get("chunk_type") ,
-            "normalization_factors": chunk.get("normalization_factors")
+            "chunk_type": chunk.get("chunk_type") 
         } for chunk in state.all_chunks]
 
         embeddings = model.encode(texts, show_progress_bar=True, convert_to_numpy=True)

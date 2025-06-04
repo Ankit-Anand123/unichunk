@@ -2,7 +2,6 @@ import numpy as np
 from state import QueryState
 import faiss
 import pickle
-from sentence_transformers import SentenceTransformer
 
 def retriever(state: QueryState) -> QueryState:
     try:
@@ -21,24 +20,27 @@ def retriever(state: QueryState) -> QueryState:
 
         # Apply modality filtering
         if state.query_modality == "text_only":
-            filtered = [(t, m) for t, m in zip(texts, metadatas) if m.get("chunk_type") == "text"]
+            filtered_idxs = [i for i, meta in enumerate(metadatas) if meta.get("chunk_type") == "text"]
         elif state.query_modality == "table_required":
-            filtered = [(t, m) for t, m in zip(texts, metadatas) if m.get("chunk_type") == "table"]
+            filtered_idxs = [i for i, meta in enumerate(metadatas) if meta.get("chunk_type") == "table"]
         elif state.query_modality == "visual_required":
-            filtered = [(t, m) for t, m in zip(texts, metadatas) if m.get("chunk_type") == "visual"]
+            filtered_idxs = [i for i, meta in enumerate(metadatas) if meta.get("chunk_type") == "visual"]
         else:
-            filtered = list(zip(texts, metadatas))
+            filtered_idxs = list(range(len(metadatas)))  # No filtering, use all
 
-        # Fallback safeguard
-        if not filtered:
-            filtered = list(zip(texts, metadatas))
+        # If nothing matched, fall back to using all chunks
+        if not filtered_idxs:
+            filtered_idxs = list(range(len(metadatas)))
 
-        filtered_texts = [t for t, _ in filtered]
-        filtered_metadatas = [m for _, m in filtered]
+        # Prepare embeddings from FAISS index for filtered chunks
+        all_embeddings = state.faiss_index.reconstruct_n(0, state.faiss_index.ntotal)
+        embeddings = np.array([all_embeddings[i] for i in filtered_idxs])
 
-        # Compute embeddings again for filtered chunks
-        model = SentenceTransformer("all-MiniLM-L6-v2")
-        embeddings = model.encode(filtered_texts, convert_to_numpy=True)
+        if embeddings.size == 0:
+            state.retrieved_chunks = []
+            return state
+
+        # Build temporary FAISS index on filtered embeddings
         dim = embeddings.shape[1]
         tmp_index = faiss.IndexFlatL2(dim)
         tmp_index.add(embeddings)
@@ -46,14 +48,14 @@ def retriever(state: QueryState) -> QueryState:
         query_emb = np.array(state.query_embedding, dtype=np.float32).reshape(1, -1)
         D, I = tmp_index.search(query_emb, k=min(10, embeddings.shape[0]))
 
-        matched_chunks = []
-        for idx in I[0]:
-            chunk = {
-                "text": filtered_texts[idx],
-                **filtered_metadatas[idx]
+        matched_chunks = [
+            {
+                "text": texts[filtered_idxs[idx]],
+                "metadata": metadatas[filtered_idxs[idx]]
             }
-            matched_chunks.append(chunk)
-
+            for idx in I[0]
+        ]
+        
         state.retrieved_chunks = matched_chunks
         return state
 

@@ -17,8 +17,7 @@ def table_chunker(state: IngestionState) -> IngestionState:
                     "page_numbers": [meta.get("page_number")],
                     "coordinates": meta.get("coordinates"),
                     "chunk_id": f"table_{i}",
-                    "chunk_type": "table" ,
-                    "normalization_factors": None
+                    "chunk_type": "table" 
                 })
 
         if state.table_chunks is None:

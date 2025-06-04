@@ -21,13 +21,8 @@ def visual_chunker(state: IngestionState) -> IngestionState:
             pix = page.get_pixmap(dpi=dpi)
             img_bytes = pix.tobytes("png")
 
-            # Extract original size BEFORE resizing
             img = Image.open(io.BytesIO(img_bytes))
-            original_width, original_height = img.size
-
-            # Resize to 512x512 for VLM model
-            target_size = (512, 512)
-            img_resized = ImageOps.fit(img, target_size, Image.Resampling.LANCZOS)
+            img_resized = ImageOps.fit(img, (512, 512), Image.Resampling.LANCZOS)
 
             buf = io.BytesIO()
             img_resized.save(buf, format="PNG")
@@ -47,13 +42,7 @@ def visual_chunker(state: IngestionState) -> IngestionState:
                 "section_title": f"Visual Summary - Page {page_num}",
                 "content": vlm_output,
                 "page_numbers": [page_num],
-                "coordinates": page.rect, 
-                "normalization_factors": {
-                    "original_width": original_width,
-                    "original_height": original_height,
-                    "resized_width": target_size[0],
-                    "resized_height": target_size[1],
-                },
+                "coordinates": page.rect,
                 "chunk_id": f"visual_page_{page_num}",
                 "chunk_type": "visual"
             })
@@ -62,7 +51,6 @@ def visual_chunker(state: IngestionState) -> IngestionState:
             state.image_chunks = []
         state.image_chunks.extend(visual_chunks)  
         return state
-
     except Exception as e:
         state.error = str(e)
         raise e

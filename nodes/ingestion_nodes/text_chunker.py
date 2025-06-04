@@ -63,8 +63,7 @@ def text_chunker(state: IngestionState) -> IngestionState:
                     "page_numbers": section["page_numbers"],
                     "coordinates": serialized_coords, 
                     "chunk_id": f"{section['section_title'][:30]}_{i//chunk_size}",
-                    "chunk_type": "text",
-                    "normalization_factors": None
+                    "chunk_type": "text"
                 })
 
         if state.text_chunks is None:

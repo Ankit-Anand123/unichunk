@@ -5,7 +5,8 @@ def answer_generator(state: QueryState) -> QueryState:
     try:
         # Build context from retrieved chunks
         context = ""
-        context = "\n\n".join([chunk["text"] for chunk in state.retrieved_chunks])
+        for i, chunk in enumerate(state.retrieved_chunks):
+            context += f"{chunk['text']}\n\n"
 
         # Build final prompt (your template)
         final_prompt = f"""
