@@ -1,4 +1,4 @@
-# PDF Insight Assistant
+# UNICHUNK - A PDF Insight Assistant
 
 A sophisticated Retrieval-Augmented Generation (RAG) system that processes PDF documents and provides intelligent, context-aware responses with visual highlighting, table extraction, and multi-modal analysis capabilities.
 
