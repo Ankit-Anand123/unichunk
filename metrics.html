@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NLP Evaluation Metrics Calculator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            text-align: center;
+            padding: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .input-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 2px solid #e9ecef;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 8px;
+            font-size: 1.1em;
+        }
+
+        .input-group textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 15px;
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
+            font-size: 1em;
+            font-family: inherit;
+            resize: vertical;
+            transition: all 0.3s ease;
+        }
+
+        .input-group textarea:focus {
+            outline: none;
+            border-color: #4facfe;
+            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
+        }
+
+        .calculate-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2em;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: block;
+            margin: 20px auto;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .calculate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+        }
+
+        .calculate-btn:active {
+            transform: translateY(0);
+        }
+
+        .results-section {
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 30px;
+            display: none;
+        }
+
+        .results-section.show {
+            display: block;
+            animation: fadeInUp 0.6s ease;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .metric-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            border-left: 5px solid #4facfe;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .metric-name {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .metric-value {
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .metric-description {
+            color: #666;
+            font-size: 0.95em;
+            line-height: 1.5;
+        }
+
+        .metric-direction {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        .higher {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .lower {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .score-excellent {
+            background: linear-gradient(135deg, #a8e6cf 0%, #88d8a3 100%);
+            color: #2d5016;
+        }
+
+        .score-good {
+            background: linear-gradient(135deg, #ffd93d 0%, #ff9800 100%);
+            color: #bf360c;
+        }
+
+        .score-poor {
+            background: linear-gradient(135deg, #ffb3ba 0%, #ff8a95 100%);
+            color: #c62828;
+        }
+
+        .summary-section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+            border: 2px solid #4facfe;
+        }
+
+        .summary-title {
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .interpretation {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .example-btn {
+            background: linear-gradient(135deg, #a8e6cf 0%, #88d8a3 100%);
+            color: #2d5016;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            margin: 10px 5px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .example-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(168, 230, 207, 0.5);
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .metrics-table {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        th {
+            background: #4facfe;
+            color: white;
+            font-weight: bold;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        @media (max-width: 768px) {
+            .content {
+                padding: 15px;
+            }
+            
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 NLP Evaluation Metrics Calculator</h1>
+            <p>Compare actual results against expected results using multiple evaluation metrics</p>
+        </div>
+
+        <div class="content">
+            <!-- Metrics Reference Table -->
+            <div class="metrics-table">
+                <h3>🧠 Metric Significance Summary</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Metric</th>
+                            <th>Ideal Direction</th>
+                            <th>Meaning</th>
+                            <th>Good Range</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>BLEU</strong></td>
+                            <td>↑ higher</td>
+                            <td>N-gram precision overlap (exact wording)</td>
+                            <td>&gt;30 decent, &gt;50 strong</td>
+                        </tr>
+                        <tr>
+                            <td><strong>ROUGE-1</strong></td>
+                            <td>↑ higher</td>
+                            <td>Unigram recall overlap</td>
+                            <td>&gt;0.3 decent, &gt;0.5 good</td>
+                        </tr>
+                        <tr>
+                            <td><strong>ROUGE-L</strong></td>
+                            <td>↑ higher</td>
+                            <td>Longest common subsequence overlap</td>
+                            <td>&gt;0.3 decent, &gt;0.5 good</td>
+                        </tr>
+                        <tr>
+                            <td><strong>METEOR</strong></td>
+                            <td>↑ higher</td>
+                            <td>Flexible semantic match with synonym & stemmer</td>
+                            <td>&gt;0.4 good, &gt;0.6 excellent</td>
+                        </tr>
+                        <tr>
+                            <td><strong>ChrF++</strong></td>
+                            <td>↑ higher</td>
+                            <td>Character-level F-score (fluency)</td>
+                            <td>&gt;40 decent, &gt;60 strong</td>
+                        </tr>
+                        <tr>
+                            <td><strong>TER</strong></td>
+                            <td>↓ lower</td>
+                            <td>Edit distance to reference (0.0 = perfect)</td>
+                            <td>&lt;0.3 good, &lt;0.5 acceptable</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Example Buttons -->
+            <div style="text-align: center; margin-bottom: 20px;">
+                <h3>🎯 Try Examples:</h3>
+                <button class="example-btn" onclick="loadExample('perfect')">Perfect Match</button>
+                <button class="example-btn" onclick="loadExample('good')">Good Match</button>
+                <button class="example-btn" onclick="loadExample('poor')">Poor Match</button>
+                <button class="example-btn" onclick="loadExample('rag')">RAG Example</button>
+                <button class="example-btn" onclick="loadExample('financial')">Financial RAG</button>
+                <button class="example-btn" onclick="loadExample('technical')">Technical Doc</button>
+            </div>
+
+            <!-- Input Section -->
+            <div class="input-section">
+                <div class="input-group">
+                    <label for="userQuery">🔍 User Query:</label>
+                    <textarea id="userQuery" placeholder="Enter the original user question or query..."></textarea>
+                </div>
+
+                <div class="input-group">
+                    <label for="actualResult">📝 Actual Result (System Output):</label>
+                    <textarea id="actualResult" placeholder="Enter the actual response generated by your system..."></textarea>
+                </div>
+
+                <div class="input-group">
+                    <label for="expectedResult">✅ Expected Result (Ground Truth):</label>
+                    <textarea id="expectedResult" placeholder="Enter the expected/reference answer(s). Separate multiple references with '|||'..."></textarea>
+                </div>
+
+                <button class="calculate-btn" onclick="calculateMetrics()">🧮 Calculate Metrics</button>
+            </div>
+
+            <!-- Results Section -->
+            <div id="resultsSection" class="results-section">
+                <h2 style="text-align: center; margin-bottom: 20px; color: #2c3e50;">📈 Evaluation Results</h2>
+                
+                <div class="metrics-grid" id="metricsGrid">
+                    <!-- Metrics will be populated here -->
+                </div>
+
+                <div class="summary-section">
+                    <div class="summary-title">🎯 Overall Assessment</div>
+                    <div id="overallSummary"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Enhanced example data with real-world scenarios
+        const examples = {
+            perfect: {
+                query: "What was the company's revenue growth in Q3 2024?",
+                actual: "The company reported 8% revenue growth in Q3 2024 driven by strong Asian market performance.",
+                expected: "The company reported 8% revenue growth in Q3 2024 driven by strong Asian market performance."
+            },
+            good: {
+                query: "What was the company's revenue growth in Q3 2024?",
+                actual: "The company saw an 8% increase in Q3 2024 due to strong sales in Asia.",
+                expected: "The company reported an 8% growth in Q3 2024, driven by Asian market performance."
+            },
+            poor: {
+                query: "What was the company's revenue growth in Q3 2024?",
+                actual: "The weather was nice today and people enjoyed outdoor activities in the park.",
+                expected: "The company reported an 8% growth in Q3 2024, driven by Asian market performance."
+            },
+            rag: {
+                query: "What are the main cybersecurity principles mentioned in the document?",
+                actual: "The document outlines three key cybersecurity principles: defense in depth, least privilege access, and continuous monitoring for threat detection.",
+                expected: "The document outlines three key cybersecurity principles: defense in depth, least privilege access, and continuous monitoring for threat detection.|||The main cybersecurity principles include layered security approach, minimal access rights, and ongoing threat surveillance.|||Key security principles: multi-layered defense, restricted user permissions, and real-time monitoring systems."
+            },
+            financial: {
+                query: "What were the key financial highlights for Q4 2023?",
+                actual: "Q4 2023 financial highlights include revenue of $2.1B (up 15% YoY), net income of $180M, and operating margin of 12.5%. The company also reduced debt by $50M.",
+                expected: "The Q4 2023 results showed strong performance with $2.1B revenue representing 15% year-over-year growth, net income reached $180M, operating margins improved to 12.5%, and debt reduction of $50M was achieved.|||Fourth quarter 2023 financial performance: Revenue $2.1 billion (15% increase), profit $180 million, 12.5% operating margin, $50M debt paydown."
+            },
+            technical: {
+                query: "How does the PDF processing pipeline work in this system?",
+                actual: "The PDF processing pipeline uses LangGraph for orchestration, starting with document upload through Streamlit, then Unstructured parsing with hi-res strategy, content classification into text/table/image types, parallel chunking, embedding generation using SentenceTransformers, and finally FAISS vector storage.",
+                expected: "The system employs a multi-stage pipeline: document ingestion via Streamlit interface, high-resolution parsing with Unstructured AI, intelligent content classification, parallel processing of different content types, semantic embedding generation, and efficient vector storage using FAISS index.|||Pipeline workflow: Upload → Parse → Classify → Chunk → Embed → Store. Uses LangGraph orchestration, Unstructured for parsing, parallel chunkers for different content types, SentenceTransformers for embeddings, FAISS for vector search."
+            }
+        };
+
+        function loadExample(type) {
+            const example = examples[type];
+            if (!example) {
+                console.error('Example not found:', type);
+                return;
+            }
+            document.getElementById('userQuery').value = example.query;
+            document.getElementById('actualResult').value = example.actual;
+            document.getElementById('expectedResult').value = example.expected;
+        }
+
+        // Tokenization function
+        function tokenize(text) {
+            return text.toLowerCase()
+                .replace(/[^\w\s]/g, ' ')
+                .split(/\s+/)
+                .filter(token => token.length > 0);
+        }
+
+        // N-gram generation
+        function getNgrams(tokens, n) {
+            const ngrams = [];
+            for (let i = 0; i <= tokens.length - n; i++) {
+                ngrams.push(tokens.slice(i, i + n).join(' '));
+            }
+            return ngrams;
+        }
+
+        // BLEU Score calculation
+        function calculateBLEU(prediction, references, maxN = 4) {
+            const predTokens = tokenize(prediction);
+            const refTokensList = references.map(ref => tokenize(ref));
+            
+            let totalScore = 0;
+            let weights = [0.25, 0.25, 0.25, 0.25]; // Equal weights for 1-4 grams
+            
+            for (let n = 1; n <= Math.min(maxN, predTokens.length); n++) {
+                const predNgrams = getNgrams(predTokens, n);
+                if (predNgrams.length === 0) continue;
+                
+                let matches = 0;
+                const predNgramCounts = {};
+                predNgrams.forEach(ngram => {
+                    predNgramCounts[ngram] = (predNgramCounts[ngram] || 0) + 1;
+                });
+                
+                // Find maximum matches across all references
+                Object.keys(predNgramCounts).forEach(ngram => {
+                    let maxRefCount = 0;
+                    refTokensList.forEach(refTokens => {
+                        const refNgrams = getNgrams(refTokens, n);
+                        const refCount = refNgrams.filter(rng => rng === ngram).length;
+                        maxRefCount = Math.max(maxRefCount, refCount);
+                    });
+                    matches += Math.min(predNgramCounts[ngram], maxRefCount);
+                });
+                
+                const precision = matches / predNgrams.length;
+                totalScore += weights[n-1] * Math.log(Math.max(precision, 1e-10));
+            }
+            
+            // Brevity penalty
+            const predLength = predTokens.length;
+            const closestRefLength = refTokensList.reduce((closest, refTokens) => {
+                return Math.abs(refTokens.length - predLength) < Math.abs(closest - predLength) 
+                    ? refTokens.length : closest;
+            }, refTokensList[0].length);
+            
+            const bp = predLength > closestRefLength ? 1 : Math.exp(1 - closestRefLength / predLength);
+            
+            return Math.max(0, bp * Math.exp(totalScore)) * 100;
+        }
+
+        // ROUGE-1 calculation
+        function calculateROUGE1(prediction, references) {
+            const predTokens = new Set(tokenize(prediction));
+            let totalRecall = 0;
+            let totalPrecision = 0;
+            
+            references.forEach(ref => {
+                const refTokens = new Set(tokenize(ref));
+                const intersection = new Set([...predTokens].filter(token => refTokens.has(token)));
+                
+                const recall = refTokens.size > 0 ? intersection.size / refTokens.size : 0;
+                const precision = predTokens.size > 0 ? intersection.size / predTokens.size : 0;
+                
+                totalRecall += recall;
+                totalPrecision += precision;
+            });
+            
+            const avgRecall = totalRecall / references.length;
+            const avgPrecision = totalPrecision / references.length;
+            
+            return avgRecall + avgPrecision > 0 ? (2 * avgRecall * avgPrecision) / (avgRecall + avgPrecision) : 0;
+        }
+
+        // ROUGE-L (Longest Common Subsequence)
+        function lcs(str1, str2) {
+            const tokens1 = tokenize(str1);
+            const tokens2 = tokenize(str2);
+            const m = tokens1.length;
+            const n = tokens2.length;
+            const dp = Array(m + 1).fill().map(() => Array(n + 1).fill(0));
+            
+            for (let i = 1; i <= m; i++) {
+                for (let j = 1; j <= n; j++) {
+                    if (tokens1[i-1] === tokens2[j-1]) {
+                        dp[i][j] = dp[i-1][j-1] + 1;
+                    } else {
+                        dp[i][j] = Math.max(dp[i-1][j], dp[i][j-1]);
+                    }
+                }
+            }
+            
+            return dp[m][n];
+        }
+
+        function calculateROUGEL(prediction, references) {
+            let totalF1 = 0;
+            
+            references.forEach(ref => {
+                const lcsLength = lcs(prediction, ref);
+                const predLength = tokenize(prediction).length;
+                const refLength = tokenize(ref).length;
+                
+                const recall = refLength > 0 ? lcsLength / refLength : 0;
+                const precision = predLength > 0 ? lcsLength / predLength : 0;
+                const f1 = recall + precision > 0 ? (2 * recall * precision) / (recall + precision) : 0;
+                
+                totalF1 += f1;
+            });
+            
+            return totalF1 / references.length;
+        }
+
+        // METEOR approximation (simplified)
+        function calculateMETEOR(prediction, references) {
+            let totalScore = 0;
+            
+            references.forEach(ref => {
+                const predTokens = tokenize(prediction);
+                const refTokens = tokenize(ref);
+                const matches = predTokens.filter(token => refTokens.includes(token)).length;
+                
+                const precision = predTokens.length > 0 ? matches / predTokens.length : 0;
+                const recall = refTokens.length > 0 ? matches / refTokens.length : 0;
+                const f1 = precision + recall > 0 ? (2 * precision * recall) / (precision + recall) : 0;
+                
+                totalScore += f1;
+            });
+            
+            return totalScore / references.length;
+        }
+
+        // Character-level F-score (ChrF++)
+        function calculateChrF(prediction, references, n = 6) {
+            function getCharNgrams(text, n) {
+                const chars = text.replace(/\s+/g, '').toLowerCase();
+                const ngrams = [];
+                for (let i = 0; i <= chars.length - n; i++) {
+                    ngrams.push(chars.slice(i, i + n));
+                }
+                return ngrams;
+            }
+            
+            let totalScore = 0;
+            
+            references.forEach(ref => {
+                let ngramScores = [];
+                
+                for (let i = 1; i <= n; i++) {
+                    const predNgrams = getCharNgrams(prediction, i);
+                    const refNgrams = getCharNgrams(ref, i);
+                    
+                    if (predNgrams.length === 0 || refNgrams.length === 0) continue;
+                    
+                    const intersection = predNgrams.filter(ngram => refNgrams.includes(ngram)).length;
+                    const precision = intersection / predNgrams.length;
+                    const recall = intersection / refNgrams.length;
+                    const f1 = precision + recall > 0 ? (2 * precision * recall) / (precision + recall) : 0;
+                    
+                    ngramScores.push(f1);
+                }
+                
+                const avgScore = ngramScores.length > 0 ? ngramScores.reduce((a, b) => a + b) / ngramScores.length : 0;
+                totalScore += avgScore;
+            });
+            
+            return (totalScore / references.length) * 100;
+        }
+
+        // Translation Edit Rate (TER)
+        function calculateTER(prediction, references) {
+            function editDistance(str1, str2) {
+                const tokens1 = tokenize(str1);
+                const tokens2 = tokenize(str2);
+                const m = tokens1.length;
+                const n = tokens2.length;
+                const dp = Array(m + 1).fill().map(() => Array(n + 1).fill(0));
+                
+                for (let i = 0; i <= m; i++) dp[i][0] = i;
+                for (let j = 0; j <= n; j++) dp[0][j] = j;
+                
+                for (let i = 1; i <= m; i++) {
+                    for (let j = 1; j <= n; j++) {
+                        if (tokens1[i-1] === tokens2[j-1]) {
+                            dp[i][j] = dp[i-1][j-1];
+                        } else {
+                            dp[i][j] = 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
+                        }
+                    }
+                }
+                
+                return dp[m][n];
+            }
+            
+            let minTER = Infinity;
+            
+            references.forEach(ref => {
+                const edits = editDistance(prediction, ref);
+                const refLength = tokenize(ref).length;
+                const ter = refLength > 0 ? edits / refLength : 0;
+                minTER = Math.min(minTER, ter);
+            });
+            
+            return minTER === Infinity ? 1 : minTER;
+        }
+
+        function getScoreClass(metric, value) {
+            const thresholds = {
+                'BLEU': { excellent: 50, good: 30 },
+                'ROUGE-1': { excellent: 0.6, good: 0.4 },
+                'ROUGE-L': { excellent: 0.6, good: 0.4 },
+                'METEOR': { excellent: 0.6, good: 0.4 },
+                'ChrF++': { excellent: 60, good: 40 },
+                'TER': { excellent: 0.2, good: 0.4 } // Lower is better for TER
+            };
+            
+            const threshold = thresholds[metric];
+            if (!threshold) return 'score-good';
+            
+            if (metric === 'TER') {
+                // For TER, lower is better
+                if (value <= threshold.excellent) return 'score-excellent';
+                if (value <= threshold.good) return 'score-good';
+                return 'score-poor';
+            } else {
+                // For other metrics, higher is better
+                if (value >= threshold.excellent) return 'score-excellent';
+                if (value >= threshold.good) return 'score-good';
+                return 'score-poor';
+            }
+        }
+
+        function calculateMetrics() {
+            const userQuery = document.getElementById('userQuery').value.trim();
+            const actualResult = document.getElementById('actualResult').value.trim();
+            const expectedResult = document.getElementById('expectedResult').value.trim();
+            
+            if (!actualResult || !expectedResult) {
+                alert('Please fill in both Actual Result and Expected Result fields.');
+                return;
+            }
+            
+            // Split expected results by |||
+            const references = expectedResult.split('|||').map(ref => ref.trim()).filter(ref => ref.length > 0);
+            
+            // Calculate metrics
+            const bleu = calculateBLEU(actualResult, references);
+            const rouge1 = calculateROUGE1(actualResult, references);
+            const rougeL = calculateROUGEL(actualResult, references);
+            const meteor = calculateMETEOR(actualResult, references);
+            const chrf = calculateChrF(actualResult, references);
+            const ter = calculateTER(actualResult, references);
+            
+            // Display results
+            const metrics = [
+                {
+                    name: 'BLEU',
+                    value: bleu.toFixed(2),
+                    direction: '↑ higher',
+                    description: 'N-gram precision overlap (exact wording match). Higher values indicate better precision in word-level matching.',
+                    directionClass: 'higher'
+                },
+                {
+                    name: 'ROUGE-1',
+                    value: rouge1.toFixed(4),
+                    direction: '↑ higher',
+                    description: 'Unigram recall overlap. Measures how many words from the reference appear in the prediction.',
+                    directionClass: 'higher'
+                },
+                {
+                    name: 'ROUGE-L',
+                    value: rougeL.toFixed(4),
+                    direction: '↑ higher',
+                    description: 'Longest Common Subsequence. Captures word order and structural similarity between texts.',
+                    directionClass: 'higher'
+                },
+                {
+                    name: 'METEOR',
+                    value: meteor.toFixed(4),
+                    direction: '↑ higher',
+                    description: 'Flexible semantic matching with stemming and synonyms. Better at capturing meaning similarity.',
+                    directionClass: 'higher'
+                },
+                {
+                    name: 'ChrF++',
+                    value: chrf.toFixed(2),
+                    direction: '↑ higher',
+                    description: 'Character-level F-score good for fluency. Better at handling morphologically rich languages.',
+                    directionClass: 'higher'
+                },
+                {
+                    name: 'TER',
+                    value: ter.toFixed(4),
+                    direction: '↓ lower',
+                    description: 'Translation Edit Rate. Percentage of edits needed to match reference (0.0 = perfect match).',
+                    directionClass: 'lower'
+                }
+            ];
+            
+            const metricsGrid = document.getElementById('metricsGrid');
+            metricsGrid.innerHTML = '';
+            
+            metrics.forEach(metric => {
+                const scoreClass = getScoreClass(metric.name, parseFloat(metric.value));
+                const card = document.createElement('div');
+                card.className = 'metric-card';
+                card.innerHTML = `
+                    <div class="metric-name">
+                        ${metric.name}
+                        <span class="metric-direction ${metric.directionClass}">${metric.direction}</span>
+                    </div>
+                    <div class="metric-value ${scoreClass}">${metric.value}</div>
+                    <div class="metric-description">${metric.description}</div>
+                `;
+                metricsGrid.appendChild(card);
+            });
+            
+            // Generate overall summary
+            const avgScore = (bleu/100 + rouge1 + rougeL + meteor + chrf/100 + (1-ter)) / 6;
+            let overallAssessment = '';
+            
+            if (avgScore > 0.7) {
+                overallAssessment = '<strong style="color: #2d5016;">🌟 Excellent Match:</strong> The actual result closely matches the expected result across multiple metrics.';
+            } else if (avgScore > 0.5) {
+                overallAssessment = '<strong style="color: #bf360c;">✓ Good Match:</strong> The actual result shows good similarity to the expected result with room for improvement.';
+            } else if (avgScore > 0.3) {
+                overallAssessment = '<strong style="color: #ff6f00;">⚠️ Moderate Match:</strong> The actual result partially matches the expected result but needs significant improvement.';
+            } else {
+                overallAssessment = '<strong style="color: #c62828;">❌ Poor Match:</strong> The actual result shows limited similarity to the expected result.';
+            }
+            
+            document.getElementById('overallSummary').innerHTML = `
+                ${overallAssessment}
+                <div class="interpretation">
+                    <strong>Key Insights:</strong><br>
+                    • <strong>BLEU (${bleu.toFixed(1)}):</strong> ${bleu > 50 ? 'Excellent' : bleu > 30 ? 'Good' : 'Needs improvement'} word-level precision<br>
+                    • <strong>ROUGE-L (${rougeL.toFixed(3)}):</strong> ${rougeL > 0.6 ? 'Excellent' : rougeL > 0.4 ? 'Good' : 'Needs improvement'} structural similarity<br>
+                    • <strong>METEOR (${meteor.toFixed(3)}):</strong> ${meteor > 0.6 ? 'Excellent' : meteor > 0.4 ? 'Good' : 'Needs improvement'} semantic matching<br>
+                    • <strong>TER (${ter.toFixed(3)}):</strong> ${ter < 0.2 ? 'Excellent' : ter < 0.4 ? 'Good' : 'High'} edit distance
+                </div>
+                <div class="interpretation">
+                    <strong>Recommendations:</strong><br>
+                    ${avgScore < 0.5 ? 
+                        '• Consider improving content relevance and accuracy<br>• Review query understanding and response generation<br>• Enhance semantic similarity in responses' : 
+                        '• Current performance is satisfactory<br>• Fine-tune for specific use cases<br>• Monitor consistency across different query types'
+                    }
+                </div>
+            `;
+            
+            document.getElementById('resultsSection').classList.add('show');
+        }
+
+        // Auto-load a good example on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadExample('good');
+        });
+    </script>
+</body>
+</html>
