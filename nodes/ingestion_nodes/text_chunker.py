@@ -7,7 +7,7 @@ def text_chunker(state: IngestionState) -> IngestionState:
     Process text-based elements and create text chunks with serialized coordinates.
     """
     try:
-        chunk_size = 300
+        chunk_size = 1000
         grouped = []
         current = {
             "section_title": "Untitled", 

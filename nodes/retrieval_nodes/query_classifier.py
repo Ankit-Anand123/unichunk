@@ -16,6 +16,7 @@ Rules:
 - If the user is simply asking whether tables/images exist (e.g. "Are there any tables?"), both flags must be false.
 - If the user asks to extract tables or show tables as dataframe, set table_requested = true.
 - If the user asks to generate plots or visualize data, set plot_requested = true.
+- Never classify plot_requested = true when summary of the image is asked. It should alwasy be false
 
 Return your output as pure JSON with two keys: plot_requested and table_requested.
 
@@ -42,6 +43,7 @@ Output: {"plot_requested": false, "table_requested": false}
         output_text = response['message']['content'].strip()
         parsed_output = extract_json(output_text)
 
+        print(parsed_output)
         return state.copy(update={
             "plot_requested": parsed_output.get("plot_requested", False),
             "table_requested": parsed_output.get("table_requested", False),

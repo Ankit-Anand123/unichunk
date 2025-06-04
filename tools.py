@@ -22,6 +22,7 @@ def extract_json(text):
         pass
     return {}
 
+
 def convert_base64_to_bytes(base64_str):
     return base64.b64decode(base64_str)
 

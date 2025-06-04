@@ -9,7 +9,7 @@ def visual_chunker(state: IngestionState) -> IngestionState:
         model = state.vlm_model or "qwen2.5vl:7b"
 
         visual_chunks = []
-        filtered_elements = [el for el in state.partitioned_elements if el.category == "Image"]
+        filtered_elements = [el for el in state.elements if el.category == "Image"]
 
         for idx, el in enumerate(tqdm(filtered_elements, desc="Analyzing Images")):
             image_base64 = getattr(el.metadata, "image_base64", None)

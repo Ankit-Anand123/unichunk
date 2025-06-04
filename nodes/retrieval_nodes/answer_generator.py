@@ -31,7 +31,7 @@ Answer:"""
 
         # Call Ollama model
         response = ollama.chat(
-            model="phi3:3.8b",
+            model="llama3.1:8b",
             messages=[
                 {"role": "user", "content": final_prompt}
             ]

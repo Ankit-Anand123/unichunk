@@ -35,7 +35,7 @@ Now classify:
         full_prompt = system_prompt + f"\nQ: {state.query}\nA:"
 
         response = ollama.chat(
-            model="phi3:3.8b",  # You can replace with any Ollama model you're using
+            model="llama3.1:8b", 
             messages=[{"role": "user", "content": full_prompt}]
         )
 
