@@ -1,5 +1,5 @@
 from state import IngestionState
-from unstructured.partition.auto import partition
+from unstructured.partition.pdf import partition_pdf
 
 def load_document(state: IngestionState) -> IngestionState:
     """
@@ -13,11 +13,11 @@ def load_document(state: IngestionState) -> IngestionState:
     """
     try:
         # Load the document using unstructured's partitioning
-        elements = partition(
+        elements = partition_pdf(
             filename=state.file_path,
-            extract_images_in_pdf=False,
-            infer_table_structure=True,
-            extract_coordinates=True
+            strategy="hi_res",
+            extract_image_block_types=["Image"],
+            extract_image_block_to_payload=True
         )
         state.elements = elements
         return state

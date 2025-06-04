@@ -1,6 +1,8 @@
 import re
 import json
 import fitz
+import base64
+from ollama import chat
 
 def clean_text(text):
     text = text.replace("-\n", "")
@@ -19,6 +21,21 @@ def extract_json(text):
     except Exception:
         pass
     return {}
+
+def convert_base64_to_bytes(base64_str):
+    return base64.b64decode(base64_str)
+
+
+def query_llm_with_images(image_bytes_list, model, prompt):
+    response = chat(
+        model=model,
+        messages=[{
+            "role": "user",
+            "content": prompt,
+            "images": image_bytes_list
+        }]
+    )
+    return response["message"]["content"]
 
 def parse_coordinates(coords):
     """

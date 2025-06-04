@@ -10,7 +10,7 @@ def run_ingestion(file_path: str, vlm_prompt: str = "Describe the visual content
     state = IngestionState(
         file_path=file_path,
         index_folder="vector_store",  # or wherever you store vectors
-        vlm_prompt="Analyze visual content of this page..."
+        vlm_prompt="Summarize the visual insights if this is a chart, graph, or table. If not, say: 'Not a data figure.'"
     )
 
     # Run LangGraph ingestion

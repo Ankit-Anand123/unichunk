@@ -1,51 +1,30 @@
-from PIL import Image, ImageOps
-import io
-import fitz
-from ollama import chat
+
 from state import IngestionState
 from tqdm import tqdm
+from tools import convert_base64_to_bytes, query_llm_with_images
 
 def visual_chunker(state: IngestionState) -> IngestionState:
     try:
         vlm_prompt = state.vlm_prompt
         model = state.vlm_model or "qwen2.5vl:7b"
-        dpi = 200
 
-        doc = fitz.open(state.file_path)
         visual_chunks = []
+        filtered_elements = [el for el in state.partitioned_elements if el.category == "Image"]
 
-        for page_num, page in tqdm(enumerate(doc, start=1), total=len(doc), desc="Visual Chunking"):
-            if not page.get_images():
+        for idx, el in enumerate(tqdm(filtered_elements, desc="Analyzing Images")):
+            image_base64 = getattr(el.metadata, "image_base64", None)
+            if image_base64 is None:
                 continue
-
-            pix = page.get_pixmap(dpi=dpi)
-            img_bytes = pix.tobytes("png")
-
-            img = Image.open(io.BytesIO(img_bytes))
-            img_resized = ImageOps.fit(img, (512, 512), Image.Resampling.LANCZOS)
-
-            buf = io.BytesIO()
-            img_resized.save(buf, format="PNG")
-            resized_img_bytes = buf.getvalue()
-
-            response = chat(
-                model=model,
-                messages=[{
-                    "role": "user",
-                    "content": vlm_prompt,
-                    "images": [resized_img_bytes]
-                }]
-            )
-            vlm_output = response["message"]["content"]
-
+            image_bytes = convert_base64_to_bytes(image_base64)
+            result = query_llm_with_images([image_bytes], model=model, prompt=vlm_prompt)
             visual_chunks.append({
-                "section_title": f"Visual Summary - Page {page_num}",
-                "content": vlm_output,
-                "page_numbers": [page_num],
-                "coordinates": page.rect,
-                "chunk_id": f"visual_page_{page_num}",
-                "chunk_type": "visual"
-            })
+                    "section_title": el.text,
+                    "content": result,
+                    "page_numbers": el.metadata.page_number,
+                    "coordinates": el.metadata.coordinates,
+                    "chunk_id": f"visual_page_{el.metadata.page_number}",
+                    "chunk_type": "visual"
+                })
 
         if state.image_chunks is None:
             state.image_chunks = []
@@ -54,3 +33,4 @@ def visual_chunker(state: IngestionState) -> IngestionState:
     except Exception as e:
         state.error = str(e)
         raise e
+
