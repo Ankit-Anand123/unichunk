@@ -33,7 +33,7 @@ Output: {"plot_requested": false, "table_requested": false}
 """
 
         response = ollama.chat(
-            model="phi3:3.8b",
+            model="llama3.1:8b",
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": f"User query: {state.query}"}

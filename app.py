@@ -14,7 +14,7 @@ import os
 os.makedirs("highlighted_pages", exist_ok=True)
 
 # Page setup
-st.set_page_config(page_title="PDF Insight Assistant", layout="wide")
+st.set_page_config(page_title="UNICHUNK - PDF Insight Assistant", layout="wide")
 st.title("\U0001F4D8 PDF Insight Assistant")
 
 # -------------------- Sidebar Session Control --------------------
@@ -131,32 +131,92 @@ if st.session_state["conversation_history"]:
     # Show highlight info if available
     if result.get("highlights"):
         st.subheader("📍 Highlighted Pages")
-        if uploaded_file:
-            pdf_file = uploaded_file
-        elif st.session_state.get("uploaded_pdf_path"):
-            pdf_file = open(st.session_state["uploaded_pdf_path"], "rb")
-        else:
-            pdf_file = None
-
-        if pdf_file:
-            doc = fitz.open(stream=pdf_file.read(), filetype="pdf")
-            for item in result["highlights"]:
-                page_num = item["page_numbers"][0]
-                coords = item["coordinates"]
-                rects = parse_coordinates(coords)
+        
+        # Debug info
+        st.write(f"Found {len(result['highlights'])} highlight(s)")
+        
+        if st.session_state.get("pdf_bytes"):
+            try:
+                doc = fitz.open(stream=st.session_state["pdf_bytes"], filetype="pdf")
                 
-                page = doc[page_num - 1]
-                for rect in rects:
-                    page_rect = page.rect
-                    safe_rect = rect & page_rect 
-                    # Only attempt extraction if safe_rect has non-zero area
-                    if safe_rect.is_empty or safe_rect.get_area() == 0:
-                        print(f"Skipping rectangle completely outside page: {safe_rect}")
+                # Process each highlight individually
+                for i, highlight_item in enumerate(result["highlights"]):
+                    page_nums = highlight_item.get("page_numbers", [])
+                    coords = highlight_item.get("coordinates")
+                    chunk_id = highlight_item.get("chunk_id", f"highlight_{i}")
+                    element_category = highlight_item.get("element_category", "unknown")
+                    distance = highlight_item.get("distance", "N/A")
+                    
+                    # Debug info
+                    st.write(f"**Highlight {i+1}:** {element_category} on page {page_nums} (distance: {distance:.3f})")
+                    
+                    if not page_nums or not coords:
+                        st.warning(f"Skipping highlight {i+1}: missing page or coordinates")
                         continue
-                    page.add_highlight_annot(safe_rect)
-                    pix = page.get_pixmap()
-                    img = Image.open(io.BytesIO(pix.tobytes("png")))
-                    output_path = f"highlighted_pages/page_{page_num}.png"
-                    img.save(output_path)
-                    st.image(img, caption=f"Page {page_num} with Highlight")
-            pdf_file.close()
+                    
+                    page_num = page_nums[0]  # Should be exactly one page now
+                    
+                    if page_num < 1 or page_num > len(doc):
+                        st.warning(f"Page {page_num} out of range")
+                        continue
+                    
+                    try:
+                        page = doc[page_num - 1]  # Zero-indexed
+                        page_rect = page.rect
+                        
+                        # Parse coordinates for this specific element
+                        from tools import parse_coordinates, validate_and_clamp_rectangle, debug_coordinates
+                        
+                        # Debug the coordinate structure
+                        debug_coordinates(coords, chunk_id)
+                        
+                        rects = parse_coordinates(coords)
+                        st.write(f"  Parsed {len(rects)} rectangle(s)")
+                        
+                        valid_rects = []
+                        for j, rect in enumerate(rects):
+                            validated_rect = validate_and_clamp_rectangle(rect, page_rect)
+                            if validated_rect:
+                                valid_rects.append(validated_rect)
+                                st.write(f"    Rect {j+1}: ({rect.x0:.1f}, {rect.y0:.1f}, {rect.x1:.1f}, {rect.y1:.1f}) -> Valid")
+                            else:
+                                st.write(f"    Rect {j+1}: ({rect.x0:.1f}, {rect.y0:.1f}, {rect.x1:.1f}, {rect.y1:.1f}) -> Invalid")
+                        
+                        if valid_rects:
+                            # Add highlights to page
+                            for rect in valid_rects:
+                                highlight_annot = page.add_highlight_annot(rect)
+                                highlight_annot.set_colors(stroke=[1, 1, 0])  # Yellow highlight
+                                highlight_annot.update()
+                            
+                            # Render page with highlights at high resolution
+                            mat = fitz.Matrix(2.0, 2.0)  # 2x zoom
+                            pix = page.get_pixmap(matrix=mat)
+                            img_bytes = pix.tobytes("png")
+                            img = Image.open(io.BytesIO(img_bytes))
+                            
+                            # Save and display
+                            output_path = f"highlighted_pages/page_{page_num}_highlight_{i}.png"
+                            img.save(output_path)
+                            
+                            st.image(img, 
+                                    caption=f"Page {page_num} - {element_category} - {chunk_id}", 
+                                    width=800)
+                            
+                            st.success(f"✅ Successfully highlighted {len(valid_rects)} area(s) on page {page_num}")
+                        else:
+                            st.error(f"❌ No valid rectangles found for page {page_num}")
+                            
+                    except Exception as e:
+                        st.error(f"Error processing page {page_num}: {e}")
+                        import traceback
+                        st.code(traceback.format_exc())
+                
+                doc.close()
+                
+            except Exception as e:
+                st.error(f"Error processing PDF for highlighting: {e}")
+                import traceback
+                st.code(traceback.format_exc())
+        else:
+            st.warning("PDF not available for highlighting")
